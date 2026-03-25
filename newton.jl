@@ -31,19 +31,44 @@ function classify_grid(grid, known_roots; tol=1e-6)
     classify_root.(zs, Ref(known_roots); tol=tol)
 end
 
-function render_basins(xs, ys, root_indices, iterations; filename="newton.png")
-    fig, ax, hm = heatmap(xs, ys, root_indices)
-    save(filename, fig)
+function build_color_matrix(indices, iterations, maxiter)
+    base_colors = [
+        RGBf(0.00, 0.00, 0.00),
+        RGBf(0.90, 0.20, 0.20),
+        RGBf(0.20, 0.70, 0.30),
+        RGBf(0.20, 0.40, 0.90)
+    ]
+    log_iters = log.(iterations)
+    scale = (log_iters .- minimum(log_iters)) ./ (maximum(log_iters) - minimum(log_iters))
+    colors = base_colors[indices .+ 1] .* (1 .- scale)
+    return colors
 end
 
+function render_basins(xs, ys, colors; filename="newton.png")
+    fig, ax, hm = image((xs[begin], xs[end]), (ys[begin], ys[end]), colors; interpolate=false)
+    save(filename, fig)
+    return filename
+end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    p = Polynomial([-1, 0, 0, 1])
+
+    const maxiter = 100
+    const xrange = (-2, 2)
+    const yrange = (-2, 2)
+    const nx = 1000
+    const ny = 1000
+    const p = Polynomial([-1, 0, 0, 1])
+
     println("p(z) = ", p)
     println("roots: ", roots(p))
 
-    grid, xs, ys = basin_grid(p, (-2, 2), (-2, 2), 800, 800)
+    grid, xs, ys = basin_grid(p, xrange, yrange, nx, ny; maxiter=maxiter)
     indices = classify_grid(grid, roots(p))
     iterations = last.(grid)
-    render_basins(xs, ys, indices, iterations)
+
+    println("min/max iterations: ", extrema(iterations))
+
+    colors = build_color_matrix(indices, iterations, maxiter)
+    fname = render_basins(xs, ys, colors)
+    println("Figure saved to ", fname)
 end
