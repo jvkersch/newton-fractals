@@ -51,8 +51,12 @@ function build_color_matrix(nroots, indices, iterations)
     return colors
 end
 
-function render_basins(xs, ys, colors; filename="newton.png")
+function render_basins(xs, ys, colors, rs; filename="newton.png")
     fig, ax, hm = image((xs[begin], xs[end]), (ys[begin], ys[end]), colors; interpolate=false)
+    scatter!(real.(rs), imag.(rs), strokecolor=:black, strokewidth=1, color=:transparent)
+
+    hidedecorations!(ax)
+    hidespines!(ax)
     save(filename, fig)
     return filename
 end
@@ -76,6 +80,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
     println("min/max iterations: ", extrema(iterations))
 
     colors = build_color_matrix(degree(p), indices, iterations)
-    fname = render_basins(xs, ys, colors)
+    fname = render_basins(xs, ys, colors, roots(p))
     println("Figure saved to ", fname)
 end
