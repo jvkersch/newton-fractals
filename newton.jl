@@ -14,10 +14,19 @@ function newton(p, dp, z0; maxiter=100, tol=1e-10)
 end
 
 function basin_grid(p, xrange, yrange, nx, ny; maxiter=100, tol=1e-10)
+    # timing single threaded: 339 ms (median) for 1000 x 1000 grid
+    # timing with 4 threads: 91 ms (median)
     dp = derivative(p)
     xs = range(xrange[1], xrange[2], length=nx)
     ys = range(yrange[1], yrange[2], length=ny)
-    grid = [newton(p, dp, x + y*im, maxiter=maxiter, tol=tol) for x in xs, y in ys]
+    grid = Matrix{Tuple{ComplexF64, Int}}(undef, nx, ny)
+
+    Threads.@threads for j in 1:ny
+        for i in 1:nx
+            grid[i, j] = newton(p, dp, xs[i] + ys[j]*im, maxiter=maxiter, tol=tol)
+        end
+    end
+
     return(; grid, xs, ys)
 end
 
