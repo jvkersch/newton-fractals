@@ -1,4 +1,5 @@
 using CairoMakie
+using Colors
 using Polynomials
 
 
@@ -40,13 +41,10 @@ function classify_grid(grid, known_roots; tol=1e-6)
     classify_root.(zs, Ref(known_roots); tol=tol)
 end
 
-function build_color_matrix(indices, iterations, maxiter)
-    base_colors = [
-        RGBf(0.00, 0.00, 0.00),
-        RGBf(0.90, 0.20, 0.20),
-        RGBf(0.20, 0.70, 0.30),
-        RGBf(0.20, 0.40, 0.90)
-    ]
+function build_color_matrix(nroots, indices, iterations)
+    base_colors = vcat(
+        [RGBf(0, 0, 0)], [convert(RGB, HSV{Float64}(i/nroots * 360, 0.8, 0.9)) for i in 1:nroots]
+    )
     log_iters = log.(iterations)
     scale = (log_iters .- minimum(log_iters)) ./ (maximum(log_iters) - minimum(log_iters))
     colors = base_colors[indices .+ 1] .* (1 .- scale)
@@ -77,7 +75,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
 
     println("min/max iterations: ", extrema(iterations))
 
-    colors = build_color_matrix(indices, iterations, maxiter)
+    colors = build_color_matrix(degree(p), indices, iterations)
     fname = render_basins(xs, ys, colors)
     println("Figure saved to ", fname)
 end
